@@ -1,0 +1,690 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Artifactory Onboarding Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky summary header, tab bar, then a two-column journey (week rail + week detail) that collapses to a chip strip on phones. */
+:root{
+  --bg:#f3f6f4; --surface:#ffffff; --surface2:#eaf0ec; --line:#d5dfd9; --ink:#12201a; --muted:#566a60;
+  --accent:#1f8a3b; --accent-ink:#ffffff; --accent-soft:#dff2e4;
+  --good:#1f8a3b; --warn:#a96a00; --bad:#c23a3a; --info:#2a6fb0;
+  --good-soft:#dff2e4; --warn-soft:#fbefd4; --bad-soft:#f9e1e1; --info-soft:#e0ecf8;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1713; --surface:#16211b; --surface2:#1d2b24; --line:#2c3d34; --ink:#e6efe9; --muted:#9db1a5;
+  --accent:#41be65; --accent-ink:#06210f; --accent-soft:#1c3a27;
+  --good:#52cc74; --warn:#e3a645; --bad:#ee7b7b; --info:#6aaae6;
+  --good-soft:#1c3a27; --warn-soft:#3a2d12; --bad-soft:#3d1f1f; --info-soft:#1a2f45; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1713; --surface:#16211b; --surface2:#1d2b24; --line:#2c3d34; --ink:#e6efe9; --muted:#9db1a5;
+  --accent:#41be65; --accent-ink:#06210f; --accent-soft:#1c3a27;
+  --good:#52cc74; --warn:#e3a645; --bad:#ee7b7b; --info:#6aaae6;
+  --good-soft:#1c3a27; --warn-soft:#3a2d12; --bad-soft:#3d1f1f; --info-soft:#1a2f45; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--f-body);padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1180px;margin-inline:auto}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;margin:0;text-wrap:balance}
+h2{font-size:1.35rem} h3{font-size:1.05rem}
+a{color:var(--accent)} a:hover{text-decoration-thickness:2px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-size:.85em}
+.muted{color:var(--muted)}
+.eyebrow{font:600 .72rem/1 var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+
+/* header */
+.top{padding-block:28px 18px;display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.top-l{min-width:0;flex:1 1 360px;display:flex;flex-direction:column;gap:10px}
+.top h1{font-size:clamp(1.7rem,4.2vw,2.5rem)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:.85rem}
+.chip b{font-weight:600}
+.prog{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.ring{position:relative;width:84px;height:84px;flex:none}
+.ring svg{display:block;transform:rotate(-90deg)}
+.ring span{position:absolute;inset:0;display:grid;place-items:center;font:700 1.15rem var(--f-display);font-variant-numeric:tabular-nums}
+.prog-t{display:flex;flex-direction:column;gap:2px}
+.prog-t strong{font:700 1.3rem var(--f-display)}
+.banner{padding:10px 14px;border-radius:10px;background:var(--warn-soft);color:var(--ink);border:1px solid var(--warn);margin-bottom:14px;font-size:.92rem}
+[hidden]{display:none!important}
+
+/* tabs */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);padding-block:6px 0;scrollbar-width:thin}
+.tab{flex:none;border:0;background:none;padding:10px 14px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--muted);font-weight:600;border-bottom:3px solid transparent}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.panel{padding-block:22px}
+
+/* journey */
+.journey{display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:start}
+.rail{position:sticky;top:60px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:center;text-align:left;padding:10px 12px;border:1px solid var(--line);background:var(--surface);border-radius:10px;cursor:pointer;width:100%}
+.step:hover{border-color:var(--accent)}
+.step[aria-current="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.step .n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:700 .95rem var(--f-display);background:var(--surface2);color:var(--ink)}
+.step[data-s="done"] .n{background:var(--accent);color:var(--accent-ink)}
+.step[data-s="inprogress"] .n{background:var(--info-soft);color:var(--info);box-shadow:inset 0 0 0 2px var(--info)}
+.step[data-s="blocked"] .n{background:var(--bad-soft);color:var(--bad);box-shadow:inset 0 0 0 2px var(--bad)}
+.step[data-s="skipped"]{opacity:.55}
+.step-t{min-width:0;display:flex;flex-direction:column;gap:3px}
+.step-t b{font-weight:600;font-size:.95rem;line-height:1.2}
+.step-t small{color:var(--muted);font-size:.78rem}
+.bar{height:5px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.stage{display:flex;gap:4px;margin-top:6px}
+.stage i{flex:1;height:4px;border-radius:2px;background:var(--surface2)}
+.stage i.on{background:var(--accent)}
+.legend{font-size:.78rem;color:var(--muted);margin-top:4px}
+
+.week{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.week-h{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.week-h h2{font-size:1.6rem}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:600;white-space:nowrap}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.pill.none{background:var(--surface2);color:var(--muted)}
+.pill.inprogress{background:var(--info-soft);color:var(--info)}
+.pill.done{background:var(--good-soft);color:var(--good)}
+.pill.blocked{background:var(--bad-soft);color:var(--bad)}
+.pill.skipped{background:var(--surface2);color:var(--muted)}
+.goal{font-size:1.1rem;padding:14px 16px;background:var(--accent-soft);border-radius:10px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.sec{display:flex;flex-direction:column;gap:10px;min-width:0}
+.sec ul{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:5px}
+.agenda{display:flex;flex-direction:column;gap:12px}
+.ag{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px}
+.ag .min{font:500 .85rem var(--f-mono);color:var(--accent);padding-top:2px;font-variant-numeric:tabular-nums}
+.ag b{font-weight:600}
+.ag ul{margin:4px 0 0;padding-left:1.1rem;color:var(--muted);font-size:.93rem}
+.todo{display:flex;flex-direction:column;gap:6px}
+.todo label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--bg)}
+.todo label:hover{border-color:var(--accent)}
+.todo input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent)}
+.todo label.on{background:var(--good-soft);border-color:transparent}
+.todo label.on span{text-decoration:line-through;text-decoration-color:var(--muted);color:var(--muted)}
+.todo label.off{cursor:default}
+.blockers{background:var(--warn-soft);border-radius:10px;padding:14px 16px}
+.blockers ul{margin:8px 0 0;padding-left:1.1rem;display:flex;flex-direction:column;gap:4px}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.lk{display:inline-block;padding:6px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;background:var(--bg);font-size:.92rem}
+.lk:hover{border-color:var(--accent);background:var(--accent-soft)}
+.lk.soon{color:var(--muted);border-style:dashed;cursor:default}
+.lk.soon:hover{background:var(--bg);border-color:var(--line)}
+.wk-nav{display:flex;justify-content:space-between;gap:10px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.small{padding:4px 10px;font-size:.85rem}
+.btn.danger{color:var(--bad)}
+details.opt{border:1px dashed var(--line);border-radius:10px;padding:10px 14px}
+details.opt summary{cursor:pointer;font-weight:600}
+details.opt .body{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+
+/* tables */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.93rem}
+th{text-align:left;font:600 .72rem var(--f-body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:10px 12px;background:var(--surface2);white-space:nowrap}
+td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:middle}
+td input[type=text],td input[type=date],td select,.form input,.form select,.cfg input,.cfg select{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:6px 8px;min-width:0;max-width:100%}
+td input[type=text]{width:100%;min-width:140px}
+td input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent)}
+.form{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
+.form label{display:flex;flex-direction:column;gap:3px;font-size:.78rem;color:var(--muted);font-weight:600}
+.form input[type=text]{min-width:180px}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--surface2);font-size:.78rem;font-weight:600}
+.tag.local{background:var(--good-soft);color:var(--good)} .tag.remote{background:var(--info-soft);color:var(--info)} .tag.virtual{background:var(--warn-soft);color:var(--warn)}
+.sev-Critical{color:var(--bad);font-weight:600}.sev-High{color:var(--warn);font-weight:600}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.sc{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.sc:first-of-type{border-top:0}
+.sc input{width:18px;height:18px;accent-color:var(--accent);margin-top:2px}
+.score-n{font:700 2rem var(--f-display)}
+.cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.cfg label{display:flex;flex-direction:column;gap:3px;font-size:.8rem;color:var(--muted);font-weight:600}
+.cfg .ck{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+.cfg .ck input{width:17px;height:17px;accent-color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.92rem;z-index:20;max-width:calc(100vw - 32px)}
+.cat{display:flex;flex-direction:column;gap:8px}
+.search{width:100%;max-width:420px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 12px}
+.localbar{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;background:var(--info-soft);border:1px solid var(--info);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:.92rem}
+.lb-btns{display:flex;flex-wrap:wrap;gap:8px}
+.lb-paste{flex:1 1 100%;display:flex;flex-direction:column;gap:6px}
+.lb-paste textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px;font:.8rem var(--f-mono);resize:vertical}
+@media (max-width:860px){
+  .journey{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;flex-direction:row;overflow-x:auto;padding-bottom:6px}
+  .step{width:auto;flex:none;min-width:150px;grid-template-columns:30px minmax(0,1fr)}
+  .step small,.step .bar{display:none}
+  .week{padding:16px}
+}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .3s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="top-l">
+      <span class="eyebrow">JFrog Artifactory · 60-day onboarding</span>
+      <h1 id="h-customer">Your onboarding journey</h1>
+      <div class="chips" id="h-chips"></div>
+    </div>
+    <div class="prog" id="h-prog"></div>
+  </header>
+  <div id="banner" class="banner" hidden></div>
+  <div id="localbar" class="localbar" hidden>
+    <p class="muted" style="margin:0;flex:1 1 280px">Progress is saved in <b>this browser only</b>. To share it, export a progress file and send it to your CSM. To load a file you were sent, import it.</p>
+    <div class="lb-btns">
+      <button class="btn primary" id="lb-export" type="button">Export progress</button>
+      <button class="btn" id="lb-copy" type="button">Copy as text</button>
+      <button class="btn" id="lb-import" type="button">Import file</button>
+      <button class="btn" id="lb-paste" type="button">Paste instead</button>
+      <button class="btn" id="lb-undo" type="button" hidden>Undo import</button>
+      <input type="file" id="lb-file" accept=".json,application/json" hidden>
+    </div>
+    <div id="lb-pastebox" class="lb-paste" hidden>
+      <label for="lb-text" class="muted" style="font-size:.85rem">Paste progress text here</label>
+      <textarea id="lb-text" rows="4" spellcheck="false"></textarea>
+      <div><button class="btn primary small" id="lb-load" type="button">Load pasted progress</button></div>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist" id="tabs" aria-label="Dashboard sections"></nav>
+
+  <section class="panel" id="p-journey" role="tabpanel"></section>
+  <section class="panel" id="p-milestones" role="tabpanel" hidden></section>
+  <section class="panel" id="p-repositories" role="tabpanel" hidden>
+    <div class="card">
+      <div><h2>Repository inventory</h2>
+      <p class="muted" style="margin:6px 0 0">Keep every repository your teams create in one place. Suggested naming: <span class="mono">{package-type}-{purpose}-{local|remote|virtual}</span>, for example <span class="mono">maven-release-local</span>.</p></div>
+      <form class="form" id="repo-form" autocomplete="off">
+        <label>Name<input type="text" id="rf-name" required placeholder="npm-dev-local"></label>
+        <label>Type<select id="rf-type"><option>local</option><option>remote</option><option>virtual</option></select></label>
+        <label>Package format<input type="text" id="rf-format" placeholder="npm" style="min-width:120px"></label>
+        <label>Purpose<input type="text" id="rf-purpose" placeholder="Dev artifacts"></label>
+        <button class="btn primary" type="submit">Add repository</button>
+      </form>
+      <div class="tw"><table><thead><tr><th>Repository</th><th>Type</th><th>Format</th><th>Purpose</th><th>Xray indexed</th><th>In production</th><th></th></tr></thead><tbody id="repo-body"></tbody></table></div>
+    </div>
+  </section>
+  <section class="panel" id="p-success" role="tabpanel" hidden></section>
+  <section class="panel" id="p-issues" role="tabpanel" hidden>
+    <div class="card">
+      <div><h2>Issue log</h2>
+      <p class="muted" style="margin:6px 0 0">Anything blocking you goes here. Your CSM reviews it before each weekly call.</p></div>
+      <form class="form" id="issue-form" autocomplete="off">
+        <label>Issue<input type="text" id="if-issue" required placeholder="SSO not authenticating" style="min-width:240px"></label>
+        <label>Severity<select id="if-sev"><option>Medium</option><option>Low</option><option>High</option><option>Critical</option></select></label>
+        <label>Owner<select id="if-owner"><option>Customer</option><option>JFrog</option></select></label>
+        <button class="btn primary" type="submit">Log issue</button>
+      </form>
+      <div class="tw"><table><thead><tr><th>Date</th><th>Issue</th><th>Severity</th><th>Status</th><th>Owner</th><th>Resolution</th><th></th></tr></thead><tbody id="issue-body"></tbody></table></div>
+    </div>
+  </section>
+  <section class="panel" id="p-resources" role="tabpanel" hidden></section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ---------- Links. Fill the nulls when the real URLs are ready; they render as "Link coming soon". ---------- */
+const SOON=null;
+const LINKS={
+  install:{title:'Install the platform',items:[
+    ['Install with the JFrog Platform Helm chart','https://jfrog.com/help/r/jfrog-installation-setup-documentation/install-the-jfrog-platform-using-helm-chart'],
+    ['Artifactory installer helper','https://jfrog.com/help/r/artifactory-install-helper'],
+    ['Xray installation guide','https://jfrog.com/help/r/jfrog-installation-setup-documentation/installing-xray']]},
+  migration:{title:'Migrate from another platform',items:[
+    ['Sonatype Nexus','https://jfrog.com/help/r/jfrog-installation-setup-documentation/migrating-from-sonatype-nexus-repository-manager-to-artifactory'],
+    ['Harbor','https://jfrog.com/help/r/artifactory-how-to-use-the-replication-of-the-harbor-to-migrate-the-docker-images-from-the-harbor-to-the-artifactory-docker-repository/artifactory-how-to-use-the-replication-of-the-harbor-to-migrate-the-docker-images-from-the-harbor-to-the-artifactory-docker-repository'],
+    ['Amazon ECR, Docker DTR, Google GCR, Quay or any token-based registry','https://github.com/JFrog/docker2artifactory?tab=readme-ov-file#amazon-ecr-registry-migrator'],
+    ['AWS CodeArtifact',SOON]]},
+  support:{title:'Support',items:[
+    ['Register your support contact','https://jfrog.com/help/r/myjfrog-portal/register-your-support-contact'],
+    ['Open the JFrog support portal','https://support.jfrog.com/login']]},
+  repos:{title:'Repositories',items:[
+    ['Best practices for structuring and naming repositories','https://jfrog.com/whitepaper/best-practices-structuring-naming-artifactory-repositories/'],
+    ['Repository management overview','https://jfrog.com/help/r/jfrog-artifactory-documentation/repository-management-overview'],
+    ['JFrog Academy: Artifactory repositories','https://academy.jfrog.com/jfrog-artifactory-repositories-2020']]},
+  auth:{title:'Authentication and SSO',items:[
+    ['SAML SSO','https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/Jtn56cdZc872IRmf8hTdTQ'],
+    ['LDAP','https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/3gtqlTyAiBtd2x9~jxO_sg'],
+    ['OpenID Connect','https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/rqnP_dKymXgSMfP_7YRJig'],
+    ['OAuth SSO','https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/~_gKYrQo5BbbDPDcOmaSlg'],
+    ['Microsoft Entra ID','https://learn.microsoft.com/en-us/entra/identity/saas-apps/jfrog-artifactory-tutorial'],
+    ['SCIM','https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/1aiieHCdABqzL~OT8itbsA'],
+    ['HTTP SSO','https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/hIKcK_MuDZs7hsJaZkwqCw'],
+    ['Atlassian Crowd and Jira','https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/RvFEjq2jA555PljAeBSQhg']]},
+  projects:{title:'Organize with Projects',items:[
+    ['Get started with Projects','https://jfrog.com/help/r/jfrog-platform-administration-documentation/get-started-with-projects']]},
+  cicd:{title:'CI/CD integrations',items:[
+    ['Jenkins','https://github.com/jfrog/jenkins-jfrog-plugin#readme'],
+    ['GitHub Actions','https://github.com/jfrog/setup-jfrog-cli/blob/master/README.md'],
+    ['GitLab CI','https://github.com/jfrog/gitlab-templates'],
+    ['Azure DevOps','https://github.com/jfrog/jfrog-azure-devops-extension?tab=readme-ov-file#Overview'],
+    ['Bamboo','https://jfrog.com/help/r/jfrog-integrations-documentation/bamboo-artifactory-plug-in'],
+    ['CircleCI',SOON],['TeamCity',SOON],['Bitbucket Pipelines',SOON]]},
+  xray:{title:'Xray policies and watches',items:[['Xray policies and watches guide',SOON]]},
+  curation:{title:'Curation',items:[['Curation setup guide',SOON]]},
+  jas:{title:'Advanced Security (JAS)',items:[['JAS setup guide',SOON]]},
+  monitoring:{title:'Monitoring',items:[
+    ['Prometheus and Grafana','https://jfrog.com/help/r/jfrog-platform-administration-documentation/prometheus-with-grafana'],
+    ['Datadog','https://docs.datadoghq.com/integrations/jfrog-platform/'],
+    ['Splunk','https://jfrog.com/help/r/jfrog-platform-administration-documentation/splunk'],
+    ['New Relic','https://docs.newrelic.com/whats-new/2023/03/whats-new-03-15-jfrog-integration/'],
+    ['Sumo Logic','https://help.sumologic.com/docs/integrations/app-development/jfrog-artifactory/']]},
+  dr:{title:'Backups and disaster recovery',items:[
+    ['Best practices for backups and disaster recovery','https://jfrog.com/whitepaper/best-practices-for-artifactory-backups-and-disaster-recovery/']]},
+  community:{title:'Your team channels',items:[['Shared Slack channel',SOON],['Progress tracker',SOON],['Onboarding feedback survey',SOON]]}
+};
+
+/* ---------- Plan content. Tags: onprem, saas, curation, jas limit an item to that track or add-on. ---------- */
+const T=(t,tag)=>({t,tag});
+const WEEKS=[
+{n:1,title:'Installation and foundation',titleSaas:'Environment validation',stage:0,
+ goal:'Your JFrog platform is running, admin access works, and the architecture is validated.',
+ prep:[T('Review your architecture: HA or single node, database and storage','onprem'),T('Prepare an installation runbook for Helm or RPM','onprem'),T('Confirm your SaaS instance is provisioned','saas'),'Create the shared Slack channel and progress tracker','Send the welcome email with the first agenda'],
+ agenda:[
+  {t:'Introductions and expectations',m:10,p:['Your CSM guides and troubleshoots. Your team does the hands-on work.','Weekly 1-hour calls for 8 weeks, Slack as the primary channel']},
+  {t:'Technical architecture review',m:30,p:[T('Infrastructure: VMs or Kubernetes cluster ready?','onprem'),T('Database: PostgreSQL version and connection details','onprem'),T('Filestore: NFS, S3 or Azure Blob for HA environments','onprem'),T('Networking: firewall rules and ports such as 8081, 8082 and 8040','onprem'),T('HA: plan for distributing the master key and join key','onprem'),T('Instance URL confirmed','saas'),T('Network allowlisting needs','saas'),T('SSO requirements and SAML provider details','saas')]},
+  {t:'Week 1 milestones',m:15,p:['Walk through the setup checks below for your track']},
+  {t:'Assign homework',m:5,p:[]}],
+ hw:[T('Complete the installation (Helm or RPM)','onprem'),T('Artifactory and Xray services start successfully','onprem'),T('Admin login works and the default password is changed','onprem'),T('Master key and join key are stored securely','onprem'),T('Database connection is validated','onprem'),T('Set the Base URL','onprem'),
+  T('Admin login to your SaaS instance works','saas'),T('Base URL is confirmed','saas'),T('License is applied','saas'),T('Initial admin user is created','saas'),
+  'Document the package managers your teams use','Identify your SSO provider and gather the integration details'],
+ blockers:[T('Services still not starting after 3 days','onprem'),T('Database connection failures, such as a master key mismatch or wrong credentials','onprem'),T('Firewall blocking critical ports even after confirmation','onprem'),T('License will not apply','saas'),T('SSO provider is not available to your team yet','saas'),'No reply on Slack or email for 2 business days'],
+ res:['install','support']},
+{n:2,title:'Repository architecture and user management',stage:0.5,
+ goal:'Repository structure is designed, users and groups are configured, and SSO is working.',
+ prep:['Review your package manager landscape: Maven, npm, Docker, Python, NuGet and others','Prepare a repository naming strategy','Prepare permission scheme recommendations','Review your SSO provider documentation (SAML, LDAP or OIDC)'],
+ agenda:[
+  {t:'Week 1 homework review',m:10,p:['Confirm the platform is operational','Review any installation or access issues']},
+  {t:'Repository design strategy',m:30,p:['List the package types you need and rank them by importance to production','Local repositories for internal artifacts, for example maven-release-local','Remote repositories that proxy public registries, for example npm-remote','Virtual repositories as one access point, for example maven-virtual','Naming: {package-type}-{purpose}-{local|remote|virtual}','Enable Xray indexing by default','Create 3 to 5 pilot repositories together']},
+  {t:'Identity and access management',m:15,p:['SSO: SAML (IdP metadata), LDAP (connection and bind credentials) or OIDC (client ID, secret, provider URL)','User groups mapped to your org, such as engineering-team, qa-team, security-admins','2 to 3 permission targets for the pilot repositories with Read, Deploy and Admin roles']},
+  {t:'Assign homework',m:5,p:[]}],
+ hw:['Test SSO login with 3 to 5 users','Provide the full list of repositories needed for production','Share your CI/CD pipeline documentation','3 to 5 pilot repositories are created','Groups and permission targets are in place'],
+ blockers:['SSO still failing after several attempts','Permissions not working or groups not syncing','Repository design feels overwhelming and needs a Professional Services session'],
+ res:['repos','auth','projects']},
+{n:3,title:'CI/CD integration and build publishing',stage:1,
+ goal:'First builds publish to Artifactory from your CI/CD pipelines.',
+ prep:['Review your CI/CD tools (we cover the top 2 if you have several)','Prepare an integration guide for each tool','Prepare an access token creation guide'],
+ agenda:[
+  {t:'Week 2 homework review',m:10,p:['Confirm SSO works for your users','Review the production repository list']},
+  {t:'CI/CD tool integration',m:40,p:['Jenkins: JFrog Artifactory plugin, server connection with an access token, Jenkinsfile publish step','GitHub Actions: jfrog/setup-jfrog-cli, JF_URL and JF_ACCESS_TOKEN secrets, jf rt upload','GitLab CI: JFrog CLI in a Docker container, publish in the deploy stage','Azure DevOps: JFrog extension from the Marketplace and a service connection','Create service account tokens (not user tokens) scoped to specific repositories, kept in your secrets manager','Live demo: run the first build together and confirm artifacts appear']},
+  {t:'Assign homework',m:10,p:[]}],
+ hw:['Run 5 or more successful builds across different package types','Identify the critical builds Xray should scan','CI/CD uses service account access tokens, not user credentials'],
+ blockers:['No successful builds after 3 days','Authentication errors in CI/CD, usually a token setup issue','CI/CD tool is outdated or incompatible'],
+ res:['cicd']},
+{n:4,title:'Xray scanning and policy foundation',stage:1.5,
+ goal:'Xray indexing is complete, first policies are configured, and the first violations are visible.',
+ prep:['Verify Xray indexing status for your repositories','Prepare Xray policy templates for security, license and operational risk','Check which security add-ons are licensed'],
+ agenda:[
+  {t:'Week 3 homework review',m:10,p:['Confirm multiple builds run successfully','Review the artifact types being published']},
+  {t:'Xray indexing',m:15,p:['Enable indexing on all production repositories','Retention period (default 90 days). The first scan can take hours.','Publish build-info from CI/CD and confirm builds appear in Xray']},
+  {t:'Policies and watches',m:30,p:['Policy "Critical CVEs": severity Critical, audit mode first, all indexed repositories','Policy "High severity CVEs": severity High or above, audit mode, production repositories','Policy "Restricted licenses": banned list such as GPL and AGPL, audit mode','Watch "Production repositories" with all three policies','Notifications by email, Slack webhook and Jira where available','Walk through the Violations tab and how to triage']},
+  {t:'Assign homework',m:5,p:[]}],
+ hw:['Review the violations and rank them by severity','Tell us which violations are noise and which are actionable','Production repositories are indexed by Xray','A watch with security and license policies is active'],
+ blockers:['Xray indexing is not finishing','No violations appear at all','Violation volume is overwhelming'],
+ res:['xray']},
+{n:5,title:'Security add-ons: Curation and JAS',stage:2,optional:true,
+ goal:'Curation blocks malicious packages and JAS is installed, all in audit mode first.',
+ note:'This week applies only if your package includes Curation or Advanced Security (JAS). Otherwise it is skipped.',
+ prep:['Confirm Curation and JAS licenses are active','Prepare installation guides','Review K3s requirements for JAS'],
+ agenda:[
+  {t:'Week 4 homework review',m:10,p:['Review your violation triage feedback','Identify policy tuning needs']},
+  {t:'Curation setup',m:25,p:[T('Enable Curation under Administration, then Curation Settings, starting with remote repositories','curation'),T('Package pending behavior: "Allow if no blocking policy" (low friction)','curation'),T('Policy "Block malicious packages" on all curated remote repositories. Safe to enable now.','curation'),T('Dry-run policies come next week','curation')]},
+  {t:'JAS setup',m:25,p:[T('Check prerequisites: K3s cluster (3 VMs: 1 master, 2 workers), Helm RBAC, air-gapped steps','jas'),T('Non-Helm: run ./configureJas.sh, choose the K3s option, provide node IPs, restart Xray','jas'),T('Helm: set executionService.enabled to true and run helm upgrade xray','jas'),T('Enable Secret Detection first. SAST and Contextual Analysis come in Week 7.','jas')]}],
+ hw:[T('Monitor blocked packages in the Curation Audit tab','curation'),T('Verify K3s pods are running and the JAS health check passes','jas')],
+ blockers:[T('Curation blocking legitimate packages','curation'),T('K3s installation failing because of network or VM sizing','jas'),'Concern that the security features are too restrictive'],
+ res:['curation','jas']},
+{n:6,title:'Policy optimization and dry-run assessment',stage:2.5,
+ goal:'Policies are tuned using Weeks 4 and 5 data, and dry-run policies are collecting feedback.',
+ prep:['Analyze violation trends from Weeks 4 and 5','Prepare policy tuning recommendations','Review Curation dry-run data','Prepare the production rollout readiness checklist'],
+ agenda:[
+  {t:'Xray policy tuning',m:25,p:['Review violation volume by severity, false positive rate, and the most common CVEs and licenses','Too noisy: raise the severity threshold. Too quiet: widen the scope.','Move toward enforcement: we recommend audit with a manual approval workflow first, then Fail Build in Month 2']},
+  {t:'Curation dry-run policies',m:20,p:[T('CVEs with CVSS 9 or higher; packages released under 2 days ago; packages over 2 years old with a newer version; packages with no identified license','curation'),T('Run for 1 to 2 weeks and review the Dry-Run tab in Audit Events','curation')]},
+  {t:'Production readiness check',m:10,p:['Critical repositories indexed','CI/CD stable and publishing regularly','Policies provide value, not just noise','Add-ons operational (if applicable)','Team adoption confirmed']},
+  {t:'Assign homework',m:5,p:[]}],
+ hw:['List any remaining blockers to production rollout','Prepare for Week 7 "Go Live" planning','Readiness check completed with your CSM'],
+ blockers:['Policies still too noisy after tuning','Xray is not showing value to your team','Team adoption has stalled'],
+ res:['xray']},
+{n:7,title:'Production rollout and team scaling',stage:3,
+ goal:'You move from pilot repositories to full production and bring more teams on board.',
+ prep:['Review usage metrics (SaaS) or the data you provide (on-prem)','Prepare a team onboarding plan with training and documentation','Prepare an advanced features overview'],
+ agenda:[
+  {t:'Week 6 homework review',m:10,p:['Confirm no blockers for rollout','Review Curation dry-run data']},
+  {t:'Production rollout',m:30,p:['Create the remaining production repositories with the same naming and permissions','Enable Xray indexing on all of them','"JFrog 101" session for additional teams and "Set Me Up" guides for each package type',T('Convert selected Curation policies to Block, starting with CVSS 9 or higher','curation')]},
+  {t:'Advanced features overview',m:15,p:['FrogBot for shift-left security (setup can wait until Month 2)','Jira integration for violation tickets',T('JAS: enable SAST and Contextual Analysis','jas')]},
+  {t:'Transition to monthly meetings',m:5,p:['Weekly calls end after Week 8. Monthly 30-minute check-ins follow. Slack stays open for break/fix.']}],
+ hw:['All remaining production repositories are created and indexed','Additional dev teams have attended a JFrog 101 session','"Set Me Up" guides shared with every team','No team is blocked by a policy'],
+ blockers:['Teams reluctant to adopt','Rollout causing build failures because a policy is too strict','Need to delay the rollout'],
+ res:['projects','monitoring']},
+{n:8,title:'Optimization, retrospective and handoff',stage:3.5,
+ goal:'Production adoption is validated, lessons are captured, and we move to a monthly cadence.',
+ prep:['Compile usage metrics: builds, artifacts and user logins','Review violation trends','Prepare a success summary','Draft the monthly check-in agenda'],
+ agenda:[
+  {t:'Production adoption validation',m:20,p:['Usage review. Target: 80% or more of dev teams actively using Artifactory.','Security posture: violation trends, Curation blocked packages, JAS findings','You confirm that development teams are using JFrog in production, and we plan for any holdout teams']},
+  {t:'Retrospective',m:20,p:['What went well, what was challenging, and lessons learned']},
+  {t:'Future roadmap',m:15,p:['Month 2 to 3: full Curation rollout, JAS advanced features, more CI/CD integrations, build promotion and release bundles','Monthly check-in: usage, feature requests, break/fix review, expansion planning']},
+  {t:'Closing',m:5,p:['Slack stays active. Feedback survey link shared.']}],
+ hw:['Confirm that development teams are using JFrog in production','Name any holdout teams and a plan for them','Complete the onboarding feedback survey','First monthly check-in is scheduled'],
+ blockers:['Unable to confirm production adoption','Critical issues still unresolved','Unhappy with the onboarding experience. Tell us directly.'],
+ res:['monitoring','dr','support']}
+];
+const STAGES=['Foundational','Emerging','Established','Transformational'];
+const stageLabel=s=>Number.isInteger(s)?STAGES[s]:STAGES[Math.floor(s)]+' to '+STAGES[Math.ceil(s)];
+const MILESTONES=[
+ {id:'m1',wk:1,t:'Platform operational'},{id:'m2',wk:1,t:'Admin login successful'},
+ {id:'m3',wk:2,t:'Repositories created'},{id:'m4',wk:2,t:'SSO configured'},
+ {id:'m5',wk:3,t:'CI/CD integrated'},{id:'m6',wk:3,t:'First build published'},
+ {id:'m7',wk:4,t:'Xray policies active'},{id:'m8',wk:5,t:'Security add-ons operational',tag:'addon'},
+ {id:'m9',wk:7,t:'Production rollout complete'},{id:'m10',wk:8,t:'Production adoption confirmed'}];
+const MUST=[
+ ['s1','Artifactory and Xray fully operational'],['s2','80% or more of development teams actively using the platform'],
+ ['s3','CI/CD pipelines integrated for all critical applications'],['s4','Xray policies enforcing (audit or block mode)'],
+ ['s5','SSO or LDAP integrated'],['s6','Usage metrics confirm production activity'],['s7','Security add-ons operational','addon']];
+const NICE=[
+ ['n1','Multiple CI/CD tools integrated, for example Jenkins and GitHub Actions'],['n2','FrogBot deployed for shift-left security'],
+ ['n3','Jira integration for violation management'],['n4','Curation organization-wide policies enforced','curation'],
+ ['n5','JAS advanced features (SAST, Contextual Analysis) enabled','jas']];
+const GUIDES=[
+ {id:'ha',tag:'onprem',t:'On-prem HA installation',p:['Every HA node must have an identical master.key','Set the join key in system.yaml on all nodes','Filestore needs shared storage: NFS, S3 or Azure Blob','You own the load balancer. We provide the backend health checks.','PostgreSQL HA must be in place','Common issues: nodes not seeing each other, database connection pool exhaustion, filestore sync delays on NFS']},
+ {id:'air',tag:'onprem',t:'Air-gapped environments',p:['Curation is not supported air-gapped because it needs Global Catalog connectivity. Use Xray policies instead.','JAS needs manual image loading (K3s images, exposure and contextual analysis images) and an offline entitlement token workflow','Plan for 1 to 2 extra weeks around Weeks 5 and 6']},
+ {id:'pkg',t:'10 or more package types',p:['Add 30 minutes to Week 2 for repository design','Common mix: Maven and Gradle, npm and yarn, Docker, PyPI, NuGet, Go, Cargo, CocoaPods','Start with your top 3 to 5 types in Weeks 1 to 4 and add the rest in Weeks 5 to 7']},
+ {id:'mig',t:'Migrating from another registry (optional)',p:['If you are moving from Nexus, Harbor, ECR, DTR, GCR, Quay or CodeArtifact, tell your CSM in Week 1 so we can plan the migration alongside repository design.'],res:'migration'}];
+
+/* ---------- State ---------- */
+const DEF={customer:'Your Company',csm:'Your JFrog CSM',deployment:'onprem',curation:true,jas:true,start:''};
+const S={config:{...DEF},checks:{},weeks:{},milestones:{},scorecard:{},repos:[],issues:[]};
+let db=null,user=null,canWrite=true,isCsm=false,tab='journey',cur=null,dirty=false;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dep=()=>S.config.deployment;
+const vis=x=>{const tag=typeof x==='string'?null:x.tag;if(!tag)return true;
+  if(tag==='onprem'||tag==='saas')return dep()==='hybrid'||dep()===tag;
+  if(tag==='curation')return !!S.config.curation; if(tag==='jas')return !!S.config.jas;
+  if(tag==='addon')return !!(S.config.curation||S.config.jas);return true};
+const txt=x=>typeof x==='string'?x:x.t;
+const weekSkipped=w=>w.optional&&!S.config.curation&&!S.config.jas;
+const hwList=w=>w.hw.map((h,i)=>({id:'w'+w.n+'h'+i,t:txt(h),ok:vis(h)})).filter(x=>x.ok);
+const weekPct=w=>{const l=hwList(w);if(!l.length)return 0;return l.filter(x=>S.checks[x.id]).length/l.length};
+const weekState=w=>{if(weekSkipped(w))return'skipped';const o=S.weeks['w'+w.n];if(o&&o!=='auto'&&o!=='skipped'&&STATE_LABEL[o])return o;
+  const p=weekPct(w);return p>=1?'done':p>0?'inprogress':'none'};
+const STATE_LABEL={none:'Not started',inprogress:'In progress',done:'Complete',blocked:'Blocked',skipped:'Not in your package'};
+const activeWeeks=()=>WEEKS.filter(w=>!weekSkipped(w));
+function overall(){let t=0,d=0;activeWeeks().forEach(w=>{const l=hwList(w);t+=l.length;d+=l.filter(x=>S.checks[x.id]).length});return t?d/t:0}
+function currentWeek(){const a=activeWeeks();return a.find(w=>weekState(w)!=='done')||a[a.length-1]}
+const fmtDate=d=>{try{return new Date(d+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}catch(e){return d}};
+const addDays=(d,n)=>{const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)};
+function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,3200)}
+const deep=(o,p)=>{for(const k in p){if(p[k]&&typeof p[k]==='object'&&!Array.isArray(p[k])){o[k]=o[k]&&typeof o[k]==='object'?o[k]:{};deep(o[k],p[k])}else o[k]=p[k]}return o};
+
+/* ---------- Persistence: one write at a time per document ---------- */
+const DOCS={config:'onboarding/config',checks:'onboarding/checks',weeks:'onboarding/weeks',milestones:'onboarding/milestones',scorecard:'onboarding/scorecard'};
+const chain={};
+function persist(key,patch){
+  if(!db)return;
+  const ref=db.doc(DOCS[key]);
+  chain[key]=(chain[key]||Promise.resolve()).then(async()=>{
+    try{await ref.update(patch)}catch(e){
+      if(e&&e.code==='invalid_argument'){try{await ref.set(patch)}catch(e2){toast('You do not have permission to change this.')}}
+      else toast('Could not save. Try again in a moment.')}
+  });
+}
+function mutate(key,patch){deep(S[key],patch);render();persist(key,patch)}
+async function addRow(col,data){
+  const row={...data};row.id=undefined;delete row.id;
+  if(!db){S[col].push({id:'l'+Date.now(),...row});render();return}
+  try{await db.collection(col).add(row)}catch(e){toast(e&&e.code==='quota_exceeded'?'The database is full. Remove old rows first.':'Could not save. You may not have permission.')}
+}
+async function patchRow(col,id,patch){
+  const r=S[col].find(x=>x.id===id);if(r)Object.assign(r,patch);render();
+  if(!db)return;
+  try{await db.doc(col+'/'+id).update(patch)}catch(e){toast('Could not save. You may not have permission.')}
+}
+async function delRow(col,id){
+  if(!db){S[col]=S[col].filter(x=>x.id!==id);render();return}
+  try{await db.doc(col+'/'+id).delete()}catch(e){toast('Could not remove. You may not have permission.')}
+}
+
+/* ---------- Rendering ---------- */
+const TABS=[['journey','Journey'],['milestones','Milestones'],['repositories','Repositories'],['success','Success criteria'],['issues','Issues'],['resources','Resources and guides']];
+function renderTabs(){
+  $('tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab" role="tab" data-tab="${k}" aria-selected="${k===tab}">${l}</button>`).join('');
+  TABS.forEach(([k])=>$('p-'+k).hidden=k!==tab);
+}
+function ring(p){const r=36,c=2*Math.PI*r;
+  return `<div class="ring"><svg width="84" height="84" viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="9"/><circle cx="42" cy="42" r="${r}" fill="none" stroke="var(--accent)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}"/></svg><span>${Math.round(p*100)}%</span></div>`}
+function renderHeader(){
+  const c=S.config;
+  $('h-customer').textContent=c.customer+' onboarding';
+  const cw=currentWeek(),dl={onprem:'On-prem',saas:'SaaS',hybrid:'Hybrid (SaaS and on-prem)'}[c.deployment];
+  const prod=['Artifactory','Xray'].concat(c.curation?['Curation']:[]).concat(c.jas?['JAS']:[]).join(', ');
+  const target=c.start?addDays(c.start,56):'';
+  $('h-chips').innerHTML=[`<span class="chip">Deployment <b>${esc(dl)}</b></span>`,`<span class="chip">Products <b>${esc(prod)}</b></span>`,`<span class="chip">Your CSM <b>${esc(c.csm)}</b></span>`,
+    c.start?`<span class="chip">Started <b>${esc(fmtDate(c.start))}</b></span><span class="chip">Day 60 target <b>${esc(fmtDate(target))}</b></span>`:''].join('');
+  const done=activeWeeks().filter(w=>weekState(w)==='done').length;
+  $('h-prog').innerHTML=ring(overall())+`<div class="prog-t"><span class="eyebrow">Where you are</span><strong>Week ${cw.n} of 8</strong><span class="muted">${done} of ${activeWeeks().length} weeks complete</span></div>`;
+}
+function ul(items){const l=items.filter(vis);return l.length?`<ul>${l.map(i=>`<li>${esc(txt(i))}</li>`).join('')}</ul>`:''}
+function linkHtml([label,url]){return url?`<a class="lk" href="${esc(url)}" target="_blank" rel="noopener">${esc(label)}</a>`:`<span class="lk soon" title="Your CSM will add this link">${esc(label)} (link coming soon)</span>`}
+function renderJourney(){
+  const rail=WEEKS.map(w=>{const st=weekState(w),pc=weekPct(w);
+    return `<button class="step" data-week="${w.n}" data-s="${st}" aria-current="${cur===w.n}"><span class="n">${w.n}</span><span class="step-t"><b>${esc(w.n===1&&dep()==='saas'?w.titleSaas:w.title)}</b><small>${esc(STATE_LABEL[st])}${st==='skipped'?'':' · '+Math.round(pc*100)+'%'}</small><span class="bar"><i style="width:${Math.round(pc*100)}%"></i></span></span></button>`}).join('');
+  const w=WEEKS.find(x=>x.n===cur),st=weekState(w),sk=st==='skipped';
+  const sbar=[0,1,2,3].map(i=>`<i class="${i<=Math.floor(w.stage)||i<=w.stage?'on':''}"></i>`).join('');
+  const list=hwList(w);
+  const hw=list.map(h=>`<label class="${S.checks[h.id]?'on':''} ${canWrite?'':'off'}"><input type="checkbox" data-hw="${h.id}" ${S.checks[h.id]?'checked':''} ${canWrite?'':'disabled'}><span>${esc(h.t)}</span></label>`).join('');
+  const ag=w.agenda.map(a=>{const p=a.p.filter(vis);if(!p.length&&a.p.length)return'';return `<div class="ag"><span class="min">${a.m} min</span><div><b>${esc(a.t)}</b>${p.length?`<ul>${p.map(x=>`<li>${esc(txt(x))}</li>`).join('')}</ul>`:''}</div></div>`}).join('');
+  const csmSel=isCsm?`<label class="muted" style="font-size:.85rem">Week status <select id="wk-status" style="border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:4px 6px">${['auto','inprogress','done','blocked'].map(v=>`<option value="${v}" ${(S.weeks['w'+w.n]||'auto')===v?'selected':''}>${v==='auto'?'Automatic':STATE_LABEL[v]}</option>`).join('')}</select></label>`:'';
+  const res=w.res.map(k=>{const g=LINKS[k];return `<div class="cat"><span class="eyebrow">${esc(g.title)}</span><div class="links">${g.items.map(linkHtml).join('')}</div></div>`}).join('');
+  const bl=w.blockers.filter(vis);
+  const prev=WEEKS.find(x=>x.n===w.n-1),next=WEEKS.find(x=>x.n===w.n+1);
+  $('p-journey').innerHTML=`<div class="journey"><div><div class="rail" id="rail">${rail}</div><p class="legend">Stage bands: ${STAGES.join(' · ')}</p></div>
+  <article class="week" id="week-body">
+   <div class="week-h"><div><span class="eyebrow">Week ${w.n} · ${esc(stageLabel(w.stage))}</span><h2>${esc(w.n===1&&dep()==='saas'?w.titleSaas:w.title)}</h2><div class="stage" aria-hidden="true">${sbar}</div></div>
+     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><span class="pill ${st==='none'?'none':st}">${esc(STATE_LABEL[st])}</span>${csmSel}</div></div>
+   ${sk?`<p class="goal">This week is skipped because your package does not include Curation or JAS. Continue to Week 6.</p>`:`
+   <p class="goal"><b>Goal:</b> ${esc(w.goal)}</p>${w.note?`<p class="muted" style="margin:0">${esc(w.note)}</p>`:''}
+   <div class="cols">
+    <div class="sec"><h3>Your homework</h3><div class="todo">${hw}</div><span class="muted" style="font-size:.85rem">${list.filter(h=>S.checks[h.id]).length} of ${list.length} done</span></div>
+    <div class="sec"><h3>What JFrog prepares</h3>${ul(w.prep)}</div>
+   </div>
+   <div class="sec"><h3>Weekly call agenda (1 hour)</h3><div class="agenda">${ag}</div></div>
+   ${bl.length?`<div class="blockers"><h3>Common blockers</h3><span class="muted" style="font-size:.9rem">If you hit one, tell your CSM in Slack right away so we can bring in the right help.</span><ul>${bl.map(b=>`<li>${esc(txt(b))}</li>`).join('')}</ul></div>`:''}
+   <div class="sec"><h3>Helpful resources</h3>${res}</div>
+   ${w.n<=2?`<details class="opt"><summary>Migrating from another registry?</summary><div class="body"><p style="margin:0">Tell your CSM in Week 1 and we will plan the migration alongside repository design.</p><div class="links">${LINKS.migration.items.map(linkHtml).join('')}</div></div></details>`:''}`}
+   <div class="wk-nav"><button class="btn" data-week="${prev?prev.n:''}" ${prev?'':'disabled'}>← ${prev?'Week '+prev.n:''}</button><button class="btn" data-week="${next?next.n:''}" ${next?'':'disabled'}>${next?'Week '+next.n:''} →</button></div>
+  </article></div>`;
+}
+function renderMilestones(){
+  const rows=MILESTONES.filter(vis).map(m=>{const v=S.milestones[m.id]||{},s=STATE_LABEL[v.s]&&v.s!=='skipped'?v.s:'none';
+    const sel=isCsm?`<select data-ms="${m.id}" data-f="s">${['none','inprogress','done','blocked'].map(o=>`<option value="${o}" ${s===o?'selected':''}>${STATE_LABEL[o]}</option>`).join('')}</select>`:`<span class="pill ${s}">${STATE_LABEL[s]}</span>`;
+    const dt=isCsm?`<input type="date" data-ms="${m.id}" data-f="d" value="${esc(v.d||'')}">`:esc(v.d?fmtDate(v.d):'');
+    const nt=isCsm?`<input type="text" data-ms="${m.id}" data-f="n" value="${esc(v.n||'')}" placeholder="Add a note">`:esc(v.n||'');
+    return `<tr><td>Week ${m.wk}</td><td><b>${esc(m.t)}</b></td><td>${sel}</td><td>${dt}</td><td>${nt}</td></tr>`}).join('');
+  const done=MILESTONES.filter(vis).filter(m=>(S.milestones[m.id]||{}).s==='done').length;
+  $('p-milestones').innerHTML=`<div class="card"><div><h2>Milestone tracker</h2><p class="muted" style="margin:6px 0 0">${done} of ${MILESTONES.filter(vis).length} milestones complete. ${isCsm?'You can edit status, date and notes.':'Your CSM updates this after each call.'}</p></div><div class="tw"><table><thead><tr><th>Week</th><th>Milestone</th><th>Status</th><th>Completed</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function renderRepos(){
+  const rows=[...S.repos].sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  $('repo-body').innerHTML=rows.length?rows.map(r=>`<tr><td class="mono">${esc(r.name)}</td><td><span class="tag ${esc(r.type)}">${esc(r.type)}</span></td><td>${esc(r.format||'')}</td><td>${esc(r.purpose||'')}</td>
+   <td><input type="checkbox" data-repo="${r.id}" data-f="xray" ${r.xray?'checked':''} ${canWrite?'':'disabled'} aria-label="Xray indexed"></td>
+   <td><input type="checkbox" data-repo="${r.id}" data-f="prod" ${r.prod?'checked':''} ${canWrite?'':'disabled'} aria-label="In production"></td>
+   <td>${canWrite?`<button class="btn small danger" data-delrepo="${r.id}">Remove</button>`:''}</td></tr>`).join(''):`<tr><td colspan="7" class="empty">No repositories yet. Add the first one above.</td></tr>`;
+  $('repo-form').hidden=!canWrite;
+}
+function renderSuccess(){
+  const mk=(arr,k)=>arr.filter(i=>vis(i[2]?{tag:i[2]}:'')).map(([id,t])=>`<label class="sc"><input type="checkbox" data-sc="${id}" ${S.scorecard[id]?'checked':''} ${isCsm?'':'disabled'}><span>${esc(t)}</span></label>`).join('');
+  const must=MUST.filter(i=>vis(i[2]?{tag:i[2]}:''));const md=must.filter(i=>S.scorecard[i[0]]).length;
+  $('p-success').innerHTML=`<div class="grid2"><div class="card"><div><span class="eyebrow">Must have for Day 60</span><div class="score-n">${md} <span class="muted" style="font-size:1rem;font-weight:500">of ${must.length}</span></div></div><div>${mk(MUST)}</div></div>
+  <div class="card"><div><span class="eyebrow">Nice to have</span><div class="score-n">${NICE.filter(i=>vis(i[2]?{tag:i[2]}:'')).filter(i=>S.scorecard[i[0]]).length} <span class="muted" style="font-size:1rem;font-weight:500">of ${NICE.filter(i=>vis(i[2]?{tag:i[2]}:'')).length}</span></div></div><div>${mk(NICE)}</div></div></div>
+  <p class="muted">${isCsm?'You confirm each item once the team has shown it working.':'Your CSM confirms each item with you on the weekly calls.'} Onboarding is complete when every must-have is checked.</p>
+  <div class="card" style="margin-top:14px"><h2>After Day 60</h2><p style="margin:0">Weekly calls end after Week 8. A <b>monthly 30-minute check-in</b> starts about 4 weeks later, and the shared Slack channel stays open for break/fix support.</p>
+  <div class="cols"><div class="sec"><h3>Monthly agenda</h3><ul><li>Usage metrics: uploads, downloads, active users, build frequency (10 min)</li><li>Open tickets and break/fix review (10 min)</li><li>Expansion: new teams, repositories, CI/CD tools, FrogBot and Jira (5 min)</li><li>Security posture: Xray trends, Curation blocks, JAS findings (5 min)</li></ul></div>
+  <div class="sec"><h3>Typical next steps</h3><ul><li>Month 2 to 3: full Curation policy rollout</li><li>Month 3 to 4: FrogBot deployment</li><li>Month 4 and later: advanced JAS features, build promotion and release bundles</li></ul></div></div></div>`;
+}
+function renderIssues(){
+  const rows=[...S.issues].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  $('issue-body').innerHTML=rows.length?rows.map(r=>`<tr><td class="mono">${esc(r.date||'')}</td><td>${esc(r.issue)}</td><td class="sev-${esc(r.sev)}">${esc(r.sev)}</td>
+   <td>${canWrite?`<select data-issue="${r.id}" data-f="status">${['Open','In progress','Resolved'].map(o=>`<option ${r.status===o?'selected':''}>${o}</option>`).join('')}</select>`:esc(r.status)}</td><td>${esc(r.owner||'')}</td>
+   <td>${canWrite?`<input type="text" data-issue="${r.id}" data-f="resolution" value="${esc(r.resolution||'')}" placeholder="How it was resolved">`:esc(r.resolution||'')}</td>
+   <td>${canWrite?`<button class="btn small danger" data-delissue="${r.id}">Remove</button>`:''}</td></tr>`).join(''):`<tr><td colspan="7" class="empty">No issues logged. Add one if something is blocking your team.</td></tr>`;
+  $('issue-form').hidden=!canWrite;
+}
+let q='';
+function renderResources(){
+  const c=S.config;
+  const keys=Object.keys(LINKS).filter(k=>!(k==='curation'&&!c.curation)&&!(k==='jas'&&!c.jas));
+  const cats=keys.map(k=>{const g=LINKS[k];const items=g.items.filter(([l])=>!q||(l+' '+g.title).toLowerCase().includes(q));
+    return items.length?`<div class="cat"><h3>${esc(g.title)}</h3><div class="links">${items.map(linkHtml).join('')}</div></div>`:''}).join('');
+  const guides=GUIDES.filter(vis).map(g=>`<details class="opt"><summary>${esc(g.t)}</summary><div class="body"><ul style="margin:0;padding-left:1.1rem">${g.p.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${g.res?`<div class="links">${LINKS[g.res].items.map(linkHtml).join('')}</div>`:''}</div></details>`).join('');
+  const cfg=isCsm?`<div class="card"><h2>Account settings</h2><p class="muted" style="margin:0">Only editors see this. Changes show for everyone and reshape the plan: tracks, add-on steps and Week 5.</p>
+   <div class="cfg"><label>Customer name<input type="text" id="cf-customer" value="${esc(c.customer)}"></label><label>CSM name<input type="text" id="cf-csm" value="${esc(c.csm)}"></label>
+   <label>Deployment<select id="cf-dep"><option value="onprem" ${c.deployment==='onprem'?'selected':''}>On-prem</option><option value="saas" ${c.deployment==='saas'?'selected':''}>SaaS</option><option value="hybrid" ${c.deployment==='hybrid'?'selected':''}>Hybrid</option></select></label>
+   <label>Onboarding start date<input type="date" id="cf-start" value="${esc(c.start||'')}"></label>
+   <label class="ck"><input type="checkbox" id="cf-cur" ${c.curation?'checked':''}>Curation purchased</label><label class="ck"><input type="checkbox" id="cf-jas" ${c.jas?'checked':''}>JAS purchased</label></div></div>`:'';
+  $('p-resources').innerHTML=`<div style="display:flex;flex-direction:column;gap:18px">${cfg}
+   <div class="card"><div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>Guides for your setup</h2></div><div style="display:flex;flex-direction:column;gap:8px">${guides}</div></div>
+   <div class="card"><div style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap"><h2>All resources</h2><input class="search" id="res-q" type="search" placeholder="Search: SAML, Jenkins, Helm…" value="${esc(q)}" aria-label="Search resources"></div>${cats||'<p class="empty">No matches.</p>'}</div></div>`;
+}
+function render(){
+  if(dirty)return;
+  if(!cur||!WEEKS.find(w=>w.n===cur))cur=currentWeek().n;
+  renderHeader();renderJourney();renderMilestones();renderRepos();renderSuccess();renderIssues();
+  const f=document.activeElement;const keep=f&&f.id==='res-q'?{id:f.id,s:f.selectionStart}:null;
+  renderResources();
+  if(keep){const n=$(keep.id);if(n){n.focus();try{n.setSelectionRange(keep.s,keep.s)}catch(e){}}}
+}
+
+/* ---------- Events ---------- */
+function setTab(t,w){tab=t;if(w)cur=w;renderTabs();render();try{location.hash=t==='journey'&&cur?'week-'+cur:t}catch(e){}}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tab]');if(t)return setTab(t.dataset.tab);
+  const w=e.target.closest('[data-week]');if(w&&w.dataset.week){cur=+w.dataset.week;render();try{location.hash='week-'+cur}catch(x){};const b=$('week-body');if(b&&innerWidth<860)b.scrollIntoView({block:'start'});return}
+  const dr=e.target.closest('[data-delrepo]');if(dr)return delRow('repos',dr.dataset.delrepo);
+  const di=e.target.closest('[data-delissue]');if(di)return delRow('issues',di.dataset.delissue);
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.hw){const on=t.checked;mutate('checks',{[t.dataset.hw]:on});return}
+  if(t.id==='wk-status'){mutate('weeks',{['w'+cur]:t.value});return}
+  if(t.dataset.ms){mutate('milestones',{[t.dataset.ms]:{[t.dataset.f]:t.value}});return}
+  if(t.dataset.sc){mutate('scorecard',{[t.dataset.sc]:t.checked});return}
+  if(t.dataset.repo){patchRow('repos',t.dataset.repo,{[t.dataset.f]:t.checked});return}
+  if(t.dataset.issue){patchRow('issues',t.dataset.issue,{[t.dataset.f]:t.value});return}
+  const m={'cf-customer':['customer',v=>v.trim()||DEF.customer],'cf-csm':['csm',v=>v.trim()||DEF.csm],'cf-dep':['deployment',v=>v],'cf-start':['start',v=>v]};
+  if(m[t.id]){mutate('config',{[m[t.id][0]]:m[t.id][1](t.value)});return}
+  if(t.id==='cf-cur'){mutate('config',{curation:t.checked});return}
+  if(t.id==='cf-jas'){mutate('config',{jas:t.checked});return}
+});
+document.addEventListener('input',e=>{if(e.target.id==='res-q'){q=e.target.value.trim().toLowerCase();render()}});
+document.addEventListener('focusin',e=>{if(e.target.matches('td input[type=text],.cfg input[type=text]'))dirty=true});
+document.addEventListener('focusout',e=>{if(dirty){dirty=false;setTimeout(render,60)}});
+$('repo-form').addEventListener('submit',e=>{e.preventDefault();const n=$('rf-name').value.trim();if(!n)return;
+  addRow('repos',{name:n,type:$('rf-type').value,format:$('rf-format').value.trim(),purpose:$('rf-purpose').value.trim(),xray:true,prod:false});e.target.reset()});
+$('issue-form').addEventListener('submit',e=>{e.preventDefault();const n=$('if-issue').value.trim();if(!n)return;
+  addRow('issues',{date:new Date().toISOString().slice(0,10),issue:n,sev:$('if-sev').value,status:'Open',owner:$('if-owner').value,resolution:''});e.target.reset()});
+function fromHash(){const h=location.hash.slice(1);const m=/^week-(\d)$/.exec(h);
+  if(m&&WEEKS.find(w=>w.n===+m[1])){tab='journey';cur=+m[1]}else if(TABS.find(t=>t[0]===h))tab=h}
+
+/* ---------- Local mode: same db surface, stored in this browser. Used whenever claude.ai storage is absent. ---------- */
+const LS_KEY='jfrog-onboarding-v1';
+let local=false,memOnly=false,warned=false,undoData=null;
+const PATH_OK=/^(onboarding\/(config|checks|weeks|milestones|scorecard)|(repos|issues)\/[A-Za-z0-9_-]{1,64})$/;
+const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+function makeLocalDb(){
+  let store={};
+  try{const r=JSON.parse(localStorage.getItem(LS_KEY)||'{}');if(isObj(r))store=r}catch(e){memOnly=true}
+  const subs=new Set(),clone=o=>JSON.parse(JSON.stringify(o));
+  const snap=p=>({id:p.split('/').pop(),exists:p in store,data:()=>p in store?clone(store[p]):undefined});
+  const docs=c=>Object.keys(store).filter(k=>k.startsWith(c+'/')).sort().map(snap);
+  const fire=s=>s.col?s.fn({docs:docs(s.path)}):s.fn(snap(s.path));
+  const commit=()=>{
+    try{localStorage.setItem(LS_KEY,JSON.stringify(store))}catch(e){memOnly=true}
+    if(memOnly&&!warned){warned=true;toast('This browser is blocking storage. Export your progress before you close the page.')}
+    subs.forEach(fire)};
+  const sub=(path,col,fn)=>{const s={path,col,fn};subs.add(s);setTimeout(()=>fire(s),0);return()=>subs.delete(s)};
+  const docRef=p=>({
+    async set(d){store[p]=clone(d);commit()},
+    async update(d){if(!(p in store))throw{code:'invalid_argument'};deep(store[p],clone(d));commit()},
+    async delete(){delete store[p];commit()},
+    onSnapshot:fn=>sub(p,false,fn)});
+  return{doc:docRef,
+    collection:c=>({
+      async add(d){const id='r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);store[c+'/'+id]=clone(d);commit();return docRef(c+'/'+id)},
+      onSnapshot:fn=>sub(c,true,fn)}),
+    exportData:()=>clone(store),
+    replaceAll:o=>{store=o;commit()}};
+}
+const slug=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'customer';
+const exportText=()=>JSON.stringify({app:'jfrog-onboarding',v:1,exportedAt:new Date().toISOString(),data:db.exportData()},null,2);
+function doExport(){
+  const blob=new Blob([exportText()],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='onboarding-'+slug(S.config.customer)+'-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast('Progress file saved to your downloads. Send it to your CSM.');
+}
+async function doCopy(){try{await navigator.clipboard.writeText(exportText());toast('Progress copied. Paste it into an email or message.')}catch(e){$('lb-pastebox').hidden=false;$('lb-text').value=exportText();$('lb-text').select();toast('Copy was blocked. The text is selected below, copy it manually.')}}
+const BAD_KEYS=['__proto__','constructor','prototype'];
+function clean(v,depth){
+  if(depth>6)throw new Error('The file is nested too deeply.');
+  if(Array.isArray(v))return v.map(x=>clean(x,depth+1));
+  if(isObj(v)){const o={};for(const k of Object.keys(v)){if(BAD_KEYS.includes(k))throw new Error('The file contains unsafe keys.');o[k]=clean(v[k],depth+1)}return o}
+  if(typeof v==='string')return v.slice(0,2000);
+  return v;
+}
+function parseImport(text){
+  if(text.length>2e6)throw new Error('That file is too large.');
+  let o;try{o=JSON.parse(text)}catch(e){throw new Error('That is not valid progress data.')}
+  if(!isObj(o)||o.app!=='jfrog-onboarding'||!isObj(o.data))throw new Error('This is not an onboarding progress file.');
+  const out={};
+  for(const k of Object.keys(o.data)){
+    if(!PATH_OK.test(k)||!isObj(o.data[k]))throw new Error('The file contains unexpected data.');
+    out[k]=clean(o.data[k],0)}
+  const c=out['onboarding/config'];
+  if(c){
+    if(!['onprem','saas','hybrid'].includes(c.deployment))c.deployment=DEF.deployment;
+    if(typeof c.start!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(c.start)||isNaN(new Date(c.start+'T00:00:00')))c.start='';
+    c.customer=typeof c.customer==='string'&&c.customer.trim()?c.customer.slice(0,120):DEF.customer;
+    c.csm=typeof c.csm==='string'&&c.csm.trim()?c.csm.slice(0,120):DEF.csm;
+    c.curation=!!c.curation;c.jas=!!c.jas}
+  return out;
+}
+function doImport(text){
+  let data;try{data=parseImport(text)}catch(e){return toast(e.message)}
+  undoData=db.exportData();db.replaceAll(data);$('lb-undo').hidden=false;
+  $('lb-pastebox').hidden=true;$('lb-text').value='';
+  toast('Progress loaded. Your previous progress was replaced. Use Undo import to go back.');
+}
+function wireLocalBar(){
+  $('lb-export').onclick=doExport;$('lb-copy').onclick=doCopy;
+  $('lb-import').onclick=()=>$('lb-file').click();
+  $('lb-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{doImport(await f.text())}catch(x){toast('Could not read that file.')}};
+  $('lb-paste').onclick=()=>{const b=$('lb-pastebox');b.hidden=!b.hidden;if(!b.hidden)$('lb-text').focus()};
+  $('lb-load').onclick=()=>{const t=$('lb-text').value.trim();if(t)doImport(t);else toast('Paste the progress text first.')};
+  $('lb-undo').onclick=()=>{if(!undoData)return;db.replaceAll(undoData);undoData=null;$('lb-undo').hidden=true;toast('Import undone.')};
+}
+
+/* ---------- Boot ---------- */
+async function boot(){
+  fromHash();renderTabs();render();
+  if(window.claude&&window.claude.use){try{[db,user]=await Promise.all([claude.use('db'),claude.use('user')])}catch(e){db=null}}
+  if(user){try{isCsm=!!(await user.canEdit());const w=await user.can('data.write');canWrite=w!==false}catch(e){}}
+  if(!db){db=makeLocalDb();local=true;canWrite=true;isCsm=true;$('localbar').hidden=false;wireLocalBar()}
+  else if(!canWrite){$('banner').hidden=false;$('banner').textContent='You can read this dashboard. To tick off homework or edit tables, ask your CSM for contributor access.'}
+  renderTabs();render();
+  if(!db)return;
+  const err=e=>console.warn('db',e&&e.code);
+  const docSub=(k,fn)=>db.doc(DOCS[k]).onSnapshot(s=>{S[k]=fn(s.exists?s.data():{});render()},err);
+  docSub('config',d=>({...DEF,...d}));docSub('checks',d=>d);docSub('weeks',d=>d);docSub('milestones',d=>d);docSub('scorecard',d=>d);
+  ['repos','issues'].forEach(c=>db.collection(c).onSnapshot(s=>{S[c]=s.docs.map(d=>({id:d.id,...d.data()}));render()},err));
+  window.addEventListener('hashchange',()=>{fromHash();renderTabs();render()});
+}
+boot();
+</script>
